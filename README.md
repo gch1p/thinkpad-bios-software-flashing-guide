@@ -92,7 +92,7 @@ sudo unmount /mnt
 
 Write this image to a USB drive (replace `/dev/sdX` with your USB drive device name):
 ```
-dd if=./bios.img of=/dev/sdX bs=1M
+sudo dd if=./bios.img of=/dev/sdX bs=1M
 ```
 
 Now reboot and press F1 to enter BIOS settings. Open the **Startup** tab and set the startup mode to **Legacy Only** (or **Legacy First**):
