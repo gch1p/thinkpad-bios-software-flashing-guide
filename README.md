@@ -7,11 +7,13 @@ This document describes known methods of flashing BIOS on xx20 and xx30 series o
   - [Requirements](#requirements)
   - [BIOS versions](#bios-versions)
   - [Downgrading BIOS](#downgrading-bios)
+  - [Creating a backup](#creating-a-backup)
   - [Examining and removing protections](#examining-and-removing-protections)
     - [Theory](#theory)
     - [Practice](#practice)
 - [SandyBridge series (X220, T420, etc.): WIP](#sandybridge-series-x220-t420-etc-wip)
 - [Troubleshooting](#troubleshooting)
+  - [Flashing the backup back](#flashing-the-backup-back)
 - [Credits](#credits)
 
 # IvyBridge series (X230, T430, etc.)
@@ -39,7 +41,7 @@ Below is a list of BIOS versions that are vulnerable enough for our goals, per m
 **T530**: 2.60<br>
 **W530**: 2.58
 
-If your BIOS version is equal or lower, skip to the **[Examining and removing protections](#examining-and-removing-protections)** section. If not, go through the downgrade process, described next.
+If your BIOS version is equal or lower, skip to the **[Creating a backup](#creating-a-backup)** section. If not, go through the downgrade process, described next.
 
 ## Downgrading BIOS
 
@@ -108,6 +110,15 @@ Boot from the USB drive (press F12 to select boot device), and BIOS flashing pro
 <a href="/screenshots/flashing2.jpg"><img src="/screenshots/flashing2.jpg" width="250px" /></a>
 
 It may reboot a couple of times in the process. Do not interrupt it.
+
+## Creating a backup
+
+You should create a backup of the `bios` region. Then, in case something goes wrong, you'll be able to just flash it back externally.
+
+The `me` region is locked, so an attempt to create a full backup will end with a `Transaction error!`. But you still can back up the `bios`:
+```
+sudo flashrom -p internal -r bios_backup.rom --ifd -i bios
+```
 
 ## Examining and removing protections
 
@@ -320,6 +331,13 @@ Currenly there are no known methods to unlock PRs on these devices internally, b
 
 # Troubleshooting
 If something doesn't work, please let me know by creating an issue, or ask me on #coreboot.
+
+## Flashing the backup back
+If you have created a backup and need to flash it back, do this:
+```
+sudo flashrom -p <YOUR_PROGRAMMER> -w bios_backup.rom --ifd -i bios
+```
+**Caution:** DO NOT flash the whole backup, because it has `FF`s instead of `fd` and `me` and it will brick your device. Use `--ifd -i bios`.
 
 # Credits
 **Rafal Wojtczuk** and **Corey Kallenberg** for discovering the vulnerability
