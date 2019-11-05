@@ -311,6 +311,8 @@ Now you can flash coreboot (or anything else) with flashrom.
 
 Remember to flash only `bios` region (use `--ifd -i bios -N`). `fd` and `me` are still locked.
 
+**Note:** if you're flashing coreboot for the first time, you should have an external SPI programmer just in case. It will help you recover if you flash non-working ROM.
+
 # SandyBridge series (X220, T420, etc.): WIP
 S3 Boot Scripts are unprotected on these models too (even on the most recent BIOS versions), but it's not useful, because FLOCKDN and SPI protected ranges are set by **LenovoFlashProtectPei** UEFI module. It is trivial to patch it, but it resides in protected range, so it can only be flashed externally.
 
