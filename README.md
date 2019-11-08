@@ -131,7 +131,7 @@ Enter BIOS settings and set the startup mode to **UEFI Only** (or **UEFI First**
 
 Now boot to your Linux system and make sure that `/sys/firmware/efi` or `/sys/firmware/efivars` exist.
 
-[Install CHIPSEC](https://github.com/chipsec/chipsec/wiki/Installing-CHIPSEC-in-Linux). You will need two patches for it, as they are not merged yet: [#737](https://github.com/chipsec/chipsec/pull/737) and [#738](https://github.com/chipsec/chipsec/pull/738). Without those patches, s3script_modify will not work.
+[Install CHIPSEC](https://github.com/chipsec/chipsec/wiki/Installing-CHIPSEC-in-Linux).
 
 ### Theory
 
