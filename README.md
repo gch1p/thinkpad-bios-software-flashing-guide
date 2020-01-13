@@ -36,6 +36,7 @@ Old versions of stock BIOS for these models have several security issues. In con
 Below is a list of BIOS versions that are vulnerable enough for our goals, per model. The version number means that you need to downgrade to that or earlier version.
 
 **X230**: 2.60<br>
+**X230t**: 2.58<br>
 **T430**: 2.64<br>
 **T430s**: 2.59<br>
 **T530**: 2.60<br>
