@@ -1,19 +1,23 @@
-This document describes known methods of flashing BIOS on xx20 and xx30 series of Lenovo ThinkPads without external programmer. The main goal is flashing coreboot while running stock BIOS.
+This document describes known methods of flashing BIOS on Lenovo ThinkPads without external programmer. The main goal is flashing coreboot while running stock BIOS, but it may be used for flashing modified vendor BIOS as well.
+
 
 # Table of Contents
 
-- [IvyBridge series (X230, T430, etc.)](#ivybridge-series-x230-t430-etc)
+- [Ivy Bridge series (X230, T430, etc.)](#ivy-bridge-series-x230-t430-etc)
   - [Introduction](#ivybridge-series-x230-t430-etc)
   - [Requirements](#requirements)
   - [BIOS versions](#bios-versions)
   - [Downgrading BIOS](#downgrading-bios)
+    - [Enabling UEFI mode](#enabling-uefi-mode)
+  - [Examining protections (theory)](#examining-protections-theory)
   - [Creating a backup](#creating-a-backup)
-  - [Examining and removing protections](#examining-and-removing-protections)
-    - [Theory](#theory)
-    - [Practice](#practice)
-- [SandyBridge series (X220, T420, etc.): WIP](#sandybridge-series-x220-t420-etc-wip)
-- [Troubleshooting](#troubleshooting)
-  - [Flashing the backup back](#flashing-the-backup-back)
+    - [Restoring](#restoring)
+  - [Removing protections (practice)](#removing-protections-practice)
+  - [About Intel ME](#about-intel-me)
+- [Sandy Bridge series (X220, T420, etc.): WIP](#sandy-bridge-series-x220-t420-etc-wip)
+- [Penryn and Nehalem series (X200, T400, X201, T410, etc.): WIP](#penryn-and-nehalem-series-x200-t400-x201-t410-etc-wip)
+- [Common methods](#common-methods)
+  - [HDA_SDO/GPIO33](#hda_sdogpio33)
 - [Credits](#credits)
 
 # IvyBridge series (X230, T430, etc.)
@@ -28,21 +32,26 @@ Old versions of stock BIOS for these models have several security issues. In con
 
 ## Requirements
 
-- USB drive (in case you need to downgrade BIOS)
-- Linux install that (can be) loaded in UEFI mode
+- USB drive (in case you need to downgrade BIOS). There were reports that GPT-partitioned drive didn't work and the fix was to change partition table to MBR.
+- Linux install that (can be) loaded in UEFI mode.
+- [CHIPSEC](https://github.com/chipsec/chipsec)
+- Recent [flashrom](https://flashrom.org). At least version 1.0 is required, older versions of flashrom do not have `--ifd` option. (Workaround by using layout file is possible, but it's more complicated.)
+- `iomem=relaxed` kernel parameter for using internal programmer.
 
 ## BIOS versions
 
-Below is a list of BIOS versions that are vulnerable enough for our goals, per model. The version number means that you need to downgrade to that or earlier version.
+Below is a table of BIOS versions that are vulnerable enough for our goals, per model. The version number means that you need to downgrade to that or earlier version.
 
-**X230**: 2.60<br>
-**X230t**: 2.58<br>
-**T430**: 2.64<br>
-**T430s**: 2.59<br>
-**T530**: 2.60<br>
-**W530**: 2.58
+| Model      | BIOS version |
+|------------|--------------|
+| X230       | 2.60         |
+| X230t      | 2.58         |
+| T430       | 2.64         |
+| T430s      | 2.59         |
+| T530       | 2.60         |
+| W530       | 2.58         |
 
-If your BIOS version is equal or lower, skip to the **[Creating a backup](#creating-a-backup)** section. If not, go through the downgrade process, described next.
+If your BIOS version is equal or lower, skip to the **[Examining protections](#examining-protections-theory)** section. If not, go through the downgrade process, described next.
 
 ## Downgrading BIOS
 
@@ -96,7 +105,7 @@ Write this image to a USB drive (replace `/dev/sdX` with your USB drive device n
 sudo dd if=./bios.img of=/dev/sdX bs=1M
 ```
 
-Now reboot and press F1 to enter BIOS settings. Open the **Startup** tab and set the startup mode to **Legacy Only** (or **Legacy First**):
+Now reboot and press F1 to enter BIOS settings. Open the **Startup** tab and set the startup mode to **Legacy** (or **Both**/**Legacy First**):
 
 <a href="/screenshots/bios-legacy-only.jpg"><img src="/screenshots/bios-legacy-only.jpg" width="250px" /></a>
 <a href="/screenshots/bios-legacy-first.jpg"><img src="/screenshots/bios-legacy-first.jpg" width="250px" /></a>
@@ -112,41 +121,29 @@ Boot from the USB drive (press F12 to select boot device), and BIOS flashing pro
 
 It may reboot a couple of times in the process. Do not interrupt it.
 
-## Creating a backup
+#### Enabling UEFI mode
 
-You should create a backup of the `bios` region. Then, in case something goes wrong, you'll be able to just flash it back externally.
-
-The `me` region is locked, so an attempt to create a full backup will end with a `Transaction error!`. But you still can back up the `bios`:
-```
-sudo flashrom -p internal -r bios_backup.rom --ifd -i bios
-```
-
-## Examining and removing protections
-
-### Preparations
-
-Enter BIOS settings and set the startup mode to **UEFI Only** (or **UEFI First**).
+When downgrade is completed, go back to the BIOS settings and set startup mode to **UEFI** (or **Both**/**UEFI First**). This is required for vulnerability exploitation.
 
 <a href="/screenshots/bios-uefi-only.jpg"><img src="/screenshots/bios-uefi-only.jpg" width="250px" /></a>
 <a href="/screenshots/bios-uefi-first.jpg"><img src="/screenshots/bios-uefi-first.jpg" width="250px" /></a>
 
-Now boot to your Linux system and make sure that `/sys/firmware/efi` or `/sys/firmware/efivars` exist.
+Then boot to your system and make sure that `/sys/firmware/efi` or `/sys/firmware/efivars` exist.
 
-[Install CHIPSEC](https://github.com/chipsec/chipsec/wiki/Installing-CHIPSEC-in-Linux).
+## Examining protections (theory)
 
-### Theory
-
-There are two (or two and a half, lol) main ways that Intel platform provides to protect BIOS chip:
+There are two main ways that Intel platform provides to protect BIOS chip:
 - **BIOS_CNTL** register of LPC Interface Bridge Registers (accessible via PCI configuration space, offset 0xDC). It has:
   * **SMM_BWP** (*SMM BIOS Write Protect*) bit. If set to 1, the BIOS is writable only in SMM. Once set to 1, cannot be changed anymore.
   * **BLE**  (*BIOS Lock Enable*) bit. If set to 1, setting BIOSWE to 1 will raise SMI. Once set to 1, cannot be changed anymore.
-  * **BIOSWE** (*BIOS Write Enable*) bit. Controls whether BIOS is writable.
+  * **BIOSWE** (*BIOS Write Enable*) bit. Controls whether BIOS is writable. This bit is always R/W.
 - SPI Protected Range Registers (**PR0**-**PR4**) of SPI Configuration Registers (SPIBAR+0x74 - SPIBAR+0x84). Each register has bits that define protected range, plus WP bit, that defines whether write protection is enabled.
-- **FLOCKDN** bit of HSFS register (SPIBAR+0x04) of SPI Configuration Registers. When set to 1, PR0-PR4 registers cannot be written. Once set to 1, cannot be changed anymore.
+
+  There's also **FLOCKDN** bit of HSFS register (SPIBAR+0x04) of SPI Configuration Registers. When set to 1, PR0-PR4 registers cannot be written. Once set to 1, cannot be changed anymore.
 
 To be able to flash, we need SMM_BWP=0, BIOSWE=1, BLE=0, FLOCKDN=0 or SPI protected ranges (PRx) to have a WP bit set to 0.
 
-Let's see what we have. Run this to examine HSFS register:
+Let's see what we have. Make sure that you have [enabled and booted in UEFI mode](#enabling-uefi-mode), then examine HSFS register:
 ```
 sudo chipsec_main -m chipsec.modules.common.spi_lock
 ```
@@ -166,12 +163,13 @@ You should see that FLOCKDN=1:
     [15] FLOCKDN          = 1 << Flash Configuration Lock-Down
 ```
 
+
 Then check BIOS_CNTL and PR0-PR4:
 ```
 sudo chipsec_main -m common.bios_wp
 ```
-Good news: on old BIOS versions, SMM_BWP=0 and BLE=0.<br>
-Neutral news: BIOSWE is disabled, but it's R/W anyway.<br>
+Good news: on old BIOS versions, SMM_BWP=0 and BLE=0.
+
 Bad news: there are 4 write protected SPI ranges:
 
 ```
@@ -202,6 +200,7 @@ Other way to examine SPI configuration registers is to just dump SPIBAR:
 ```
 sudo chipsec_util mmio dump SPIBAR
 ```
+
 You will see SPIBAR address (0xFED1F800) and registers (for example, 00000004 is HSFS):
 ```
 [mmio] MMIO register range [0x00000000FED1F800:0x00000000FED1F800+00000200]:
@@ -209,7 +208,7 @@ You will see SPIBAR address (0xFED1F800) and registers (for example, 00000004 is
 +00000004: 0004E009
 ...
 ```
-As you can see, the only thing we need is to unset WP on PR0-PR4. But that cannot be done once FLOCKDN is set to 1.
+As you can see, the only thing we need is to unset WP bit on PR0-PR4. But that cannot be done once FLOCKDN is set to 1.
 
 Now the fun part!
 
@@ -232,8 +231,24 @@ Decoded:
 ```
 These scripts are stored in memory. The vulnerability is that we can overwrite this memory, change these instructions and they will be executed on S3 resume. Once we patch that instruction to not set FLOCKDN bit, we will be able to write to PR0-PR4 registers.
 
-### Practice
-The original script writes 0xE009 to HSFS. FLOCKDN is 15th bit, so let's write 0x6009 instead.
+## Creating a backup
+
+Before you proceed, please create a backup of the `bios` region. Then, in case something goes wrong, you'll be able to flash it back externally.
+
+The `me` region is locked due to active ME, so an attempt to create a full dump will fail. But you can back up the `bios`:
+```
+sudo flashrom -p internal -r bios_backup.rom --ifd -i bios
+```
+
+#### Restoring
+If you will even need to flash it back, use `--ifd -i bios` as well:
+```
+sudo flashrom -p <YOUR_PROGRAMMER> -w bios_backup.rom --ifd -i bios
+```
+**Important:** if you will omit `--ifd -i bios` for flashing, you will brick your machine, because your backup has `FF`s in place of `fd` and `me` regions. Flash only `bios` region!
+
+## Removing protections (practice)
+The original boot script writes 0xE009 to HSFS. FLOCKDN is 15th bit, so let's write 0x6009 instead:
 
 Run this:
 ```
@@ -321,28 +336,73 @@ Bingo!
 
 Now you can flash coreboot (or anything else) with flashrom.
 
-Remember to flash only `bios` region (use `--ifd -i bios -N`). `fd` and `me` are still locked.
+Remember to flash only `bios` region (use `--ifd -i bios -N`). `fd` and `me` are still not writable.
 
 **Note:** if you're flashing coreboot for the first time, you should have an external SPI programmer just in case. It will help you recover if you flash non-working ROM.
+
+## About Intel ME
+
+Unlocking PRx doesn't allow you to flash ME or Flash Descriptor, so you cannot use [me_cleaner](https://github.com/corna/me_cleaner). Both `me` and `fd` regions will still be write-protected even if you flash coreboot. For now, the best way to get rid of ME is to flash me_cleaned firmware externally.
+
+As an alternative, you can use Software Temporary Disable Mode. This is ME's built-in mechanism that BIOS may use to "ask" ME to disable itself after next reboot. In this mode ME stops at BUP phase. This mode is preserved between reboots. Working patch for coreboot is [available](https://review.coreboot.org/c/coreboot/+/37115).
+
+Some possible future solutions are described below.
+
+#### HMRFPO (not implemented)
+
+Researchers from PT Security discovered a special MKHI command called HMRFPO (Host ME Region Flash Protection Override) that was used in some vendor BIOSes (apparently, for ME firmware updates). BIOS sends this command before End of Post (binary sequence of the command is `0x800c0007 0x00000105 0x00000000 0x00000000`). It takes effect for the next reboot and ME region on SPI flash becomes writable. Unfortunately I couldn't reproduce it on X230 (ME 8.1.1416.40).
+
+#### HDA_SDO (not implemented)
+
+It is possible to make flash descriptor writable for one boot by asserting HDA_SDO pin high on boot. It should be possible to flash unlocked descriptor while in this state, and that should open ability to flash ME afterwards. [See here for more info](#hda_sdogpio33).
 
 # SandyBridge series (X220, T420, etc.): WIP
 S3 Boot Scripts are unprotected on these models too (even on the most recent BIOS versions), but it's not useful, because FLOCKDN and SPI protected ranges are set by **LenovoFlashProtectPei** UEFI module. It is trivial to patch it, but it resides in protected range, so it can only be flashed externally.
 
 Currently there are no known methods to unlock PRs on these devices internally, but investigation is ongoing.
 
-# Troubleshooting
-If something doesn't work, please let me know by creating an issue, or ask me on #coreboot.
 
-## Flashing the backup back
-If you have created a backup and need to flash it back, do this:
+# Penryn and Nehalem series (X200, T400, X201, T410, etc.): WIP
+Currently, the only known way to flash these models without external SPI programmer is by using GPIO33. It is not properly documented yet, and no scripts to automate the process were written. There was a success story though: a user from #coreboot/#libreboot IRC channels has successfully corebooted his X201 without touching the SPI chip.
+
+Progress is tracked [here](https://notabug.org/libreboot/libreboot/issues/689).
+
+# Common methods
+
+## HDA_SDO/GPIO33
+There's known Intel "feature", sometimes called "pinmod": you can make flash descriptor writable for one boot by asserting HDA_SDO pin on the motherboard high (on older platforms, you need to assert GPIO33 pin low) at boot time. **Writable flash descriptor** sometimes **allows to flash whole BIOS region** using a couple of neat tricks.  I will show this using X220 as an example.
+
+This is SPI flash layout on X220:
 ```
-sudo flashrom -p <YOUR_PROGRAMMER> -w bios_backup.rom --ifd -i bios
+00000000:00000fff fd
+00500000:007fffff bios
+00003000:004fffff me
+00001000:00002fff gbe
 ```
-**Caution:** DO NOT flash the whole backup, because it has `FF`s instead of `fd` and `me` and it will brick your device. Use `--ifd -i bios`.
+Lenovo BIOS protects, using PR0 register, only small (but critical) part of it: `0x00780000-0x1ffffff`. 
+
+> PR0 defines the end of protected range as `0x1ffffff`, but since it's 8MB chip and `bios` ends at `0x007fffff`, `0x00780000-0x007fffff` is what actually is protected. This is the last 512K.
+
+As you can see, `0x00500000-0x0077ffff` part is totally writable.
+
+Since flash descriptor is writable too, here is what we can do:
+- patch flash descriptor:
+  - redefine `bios` as `00500000:0077ffff` using ifdtool;
+  - define the rest of it (`00780000:007fffff`) as `pd` (Platform Data). This is **required**, otherwise you will not be able to flash it in future;
+  - unlock FD and ME regions (`ifdtool -u`);
+- build and flash (small enough) coreboot ROM to this region (must be careful and make sure that reset vector is at the end of our custom region and not at the end of 8MB ROM; use dd or ifdtool for that);
+- flash modified descriptor;
+- power off (new FD takes effect after cold boot);
+- wait a few seconds and power on.
+
+After this, new FD will be in effect and coreboot will be loaded from `0x00500000-0x0077ffff` region, instead of Lenovo BIOS. At this point whole `0x00500000-0x007fffff` will be writable and you will be able to flash coreboot again or patched vendor BIOS (don't forget to revert `fd` changes regarding the `bios` region).
+
+A user from #coreboot/#libreboot IRC channels was able to flash his X201 internally using the idea described above. However, this is not for mass use yet: we need to write scripts to automate the process, locate HDA_SDO or GPIO33 pins on all motherboards in interest, take their photos and explain, what to do with what.
 
 # Credits
-**Rafal Wojtczuk** and **Corey Kallenberg** for discovering the vulnerability
+**Rafal Wojtczuk** and **Corey Kallenberg** for discovering the S3 Boot Scripts vulnerability
 
 [pgera](https://github.com/hamishcoleman/thinkpad-ec/issues/70#issuecomment-417903315) for the initial research and working solution
 
 Lenovo for fake rollback protection
+
