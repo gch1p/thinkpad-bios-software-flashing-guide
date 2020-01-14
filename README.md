@@ -4,7 +4,7 @@ This document describes known methods of flashing BIOS on Lenovo ThinkPads witho
 # Table of Contents
 
 - [Ivy Bridge series (X230, T430, etc.)](#ivy-bridge-series-x230-t430-etc)
-  - [Introduction](#ivybridge-series-x230-t430-etc)
+  - [Introduction](#ivy-bridge-series-x230-t430-etc)
   - [Requirements](#requirements)
   - [BIOS versions](#bios-versions)
   - [Downgrading BIOS](#downgrading-bios)
@@ -20,7 +20,7 @@ This document describes known methods of flashing BIOS on Lenovo ThinkPads witho
   - [HDA_SDO/GPIO33](#hda_sdogpio33)
 - [Credits](#credits)
 
-# IvyBridge series (X230, T430, etc.)
+# Ivy Bridge series (X230, T430, etc.)
 
 Old versions of stock BIOS for these models have several security issues. In context of this guide, two of them are of interest.
 
@@ -356,7 +356,7 @@ Researchers from PT Security discovered a special MKHI command called HMRFPO (Ho
 
 It is possible to make flash descriptor writable for one boot by asserting HDA_SDO pin high on boot. It should be possible to flash unlocked descriptor while in this state, and that should open ability to flash ME afterwards. [See here for more info](#hda_sdogpio33).
 
-# SandyBridge series (X220, T420, etc.): WIP
+# Sandy Bridge series (X220, T420, etc.): WIP
 S3 Boot Scripts are unprotected on these models too (even on the most recent BIOS versions), but it's not useful, because FLOCKDN and SPI protected ranges are set by **LenovoFlashProtectPei** UEFI module. It is trivial to patch it, but it resides in protected range, so it can only be flashed externally.
 
 Currently there are no known methods to unlock PRs on these devices internally, but investigation is ongoing.
