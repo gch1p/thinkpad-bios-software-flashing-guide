@@ -348,9 +348,9 @@ As an alternative, you can use Software Temporary Disable Mode. This is ME's bui
 
 Some possible future solutions are described below.
 
-#### HMRFPO (not implemented)
+#### HMRFPO (won't work)
 
-Researchers from PT Security discovered a special MKHI command called HMRFPO (Host ME Region Flash Protection Override) that was used in some vendor BIOSes (apparently, for ME firmware updates). BIOS sends this command before End of Post (binary sequence of the command is `0x800c0007 0x00000105 0x00000000 0x00000000`). It takes effect for the next reboot and ME region on SPI flash becomes writable. Unfortunately I couldn't reproduce it on X230 (ME 8.1.1416.40).
+**HMRFPO** (Host ME Region Flash Protection Override) is a command BIOS can use to unlock ME region on SPI flash for writing. Vendor can disable it during manufacturing. Unfortunately it's disabled on ThinkPads and can't be used.
 
 #### HDA_SDO (not implemented)
 
@@ -379,7 +379,7 @@ This is SPI flash layout on X220:
 00003000:004fffff me
 00001000:00002fff gbe
 ```
-Lenovo BIOS protects, using PR0 register, only small (but critical) part of it: `0x00780000-0x1ffffff`. 
+Lenovo BIOS protects, using PR0 register, only small (but critical) part of it: `0x00780000-0x1ffffff`.
 
 > PR0 defines the end of protected range as `0x1ffffff`, but since it's 8MB chip and `bios` ends at `0x007fffff`, `0x00780000-0x007fffff` is what actually is protected. This is the last 512K.
 
