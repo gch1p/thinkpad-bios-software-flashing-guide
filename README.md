@@ -408,11 +408,11 @@ use [me_cleaner](https://github.com/corna/me_cleaner). Both `me` and `fd`
 regions will still be write-protected even if you flash coreboot. For now, the
 best way to get rid of ME is to flash me_cleaned firmware externally.
 
-As an alternative, you can use Software Temporary Disable Mode. This is ME's
-built-in mechanism that BIOS may use to "ask" ME to disable itself after next
-reboot. In this mode ME stops at BUP phase. This mode is preserved between
-reboots. Working patch for coreboot is
-[available](https://review.coreboot.org/c/coreboot/+/37115).
+As an alternative, you can use Soft Temporary Disable Mode. This is ME's
+built-in mechanism that BIOS can use to "ask" ME to disable itself on the next
+boot. In this mode ME doesn't load its kernel and stops at BUP phase. This mode
+is saved to ME NVRAM and thus preserved between reboots and poweroffs. Working
+patch for coreboot is [available](https://review.coreboot.org/c/coreboot/+/37115).
 
 Some possible future solutions are described below.
 
