@@ -24,6 +24,9 @@ stock BIOS, but it may be used for flashing modified vendor BIOS as well.
 
 # Ivy Bridge series (X230, T430, etc.)
 
+> A guide for Ivy Bridge ThinkPads has also been merged to coreboot
+  documentation, [see here](https://doc.coreboot.org/mainboard/lenovo/ivb_internal_flashing.html).
+
 Old versions of stock BIOS for these models have several security issues. In
 context of this guide, two of them are of interest.
 
