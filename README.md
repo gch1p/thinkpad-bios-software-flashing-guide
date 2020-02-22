@@ -416,7 +416,7 @@ patch for coreboot is [available](https://review.coreboot.org/c/coreboot/+/37115
 
 Some possible future solutions are described below.
 
-#### HMRFPO (won't work)
+#### HMRFPO (updated: won't work)
 
 **HMRFPO** (Host ME Region Flash Protection Override) is a command BIOS can use
 to unlock ME region on SPI flash for writing. Vendor can disable it during
