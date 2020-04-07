@@ -124,7 +124,7 @@ dosflash.exe /sd /file G1ET93WW\$01D2000.FL1
 
 Save the file, then unmount the partition:
 ```
-sudo unmount /mnt
+sudo umount /mnt
 ```
 
 Write this image to a USB drive (replace `/dev/sdX` with your USB drive device
