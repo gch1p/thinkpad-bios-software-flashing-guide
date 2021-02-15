@@ -510,5 +510,5 @@ Lenovo for fake rollback protection
 
 # License
 
-This documented is licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+This document is licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 terms.
