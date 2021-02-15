@@ -21,6 +21,7 @@ stock BIOS, but it may be used for flashing modified vendor BIOS as well.
 - [Common methods](#common-methods)
   - [HDA_SDO/GPIO33](#hda_sdogpio33)
 - [Credits](#credits)
+- [License](#license)
 
 # Ivy Bridge series (X230, T430, etc.)
 
@@ -506,3 +507,8 @@ vulnerability
 for the initial research and working solution
 
 Lenovo for fake rollback protection
+
+# License
+
+This documented is licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+terms.
